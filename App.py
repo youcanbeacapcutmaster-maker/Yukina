@@ -1,3 +1,4 @@
+import streamlit
 import streamlit as st
 import os
 import json
@@ -44,8 +45,8 @@ for file in os.listdir(SAVE_DIR):
                 "title": data.get("title", "（無題）"),
                 "tags": data.get("tags", [])
             })
-    except:
-        pass
+    except Exception:
+        continue
 
 st.subheader("🔍 検索結果")
 
@@ -77,8 +78,11 @@ selected = st.session_state["selected"]
 # =====================
 if selected != "新規":
     filename = selected
-    with open(os.path.join(SAVE_DIR, filename), "r", encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with open(os.path.join(SAVE_DIR, filename), "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
 
     title = data.get("title", "")
     tags = data.get("tags", [])
@@ -128,25 +132,30 @@ if filename:
         "title": title,
         "tags": tags,
         "text": content,
-        "drawing": canvas.json_data
+        "drawing": canvas.json_data if canvas else None
     }
 
-    with open(os.path.join(SAVE_DIR, filename), "w", encoding="utf-8") as f:
-        json.dump(save_data, f, ensure_ascii=False)
-
-    st.success("自動保存中")
+    try:
+        with open(os.path.join(SAVE_DIR, filename), "w", encoding="utf-8") as f:
+            json.dump(save_data, f, ensure_ascii=False)
+        st.success("自動保存中")
+    except Exception:
+        st.error("保存に失敗しました")
 
 # =====================
-# 削除 → ゴミ箱
+# ゴミ箱へ移動
 # =====================
 if selected != "新規":
     if st.button("🗑 ゴミ箱に移動"):
-        shutil.move(
-            os.path.join(SAVE_DIR, selected),
-            os.path.join(TRASH_DIR, selected)
-        )
-        st.session_state["selected"] = "新規"
-        st.experimental_rerun()
+        try:
+            shutil.move(
+                os.path.join(SAVE_DIR, selected),
+                os.path.join(TRASH_DIR, selected)
+            )
+            st.session_state["selected"] = "新規"
+            st.experimental_rerun()
+        except Exception:
+            st.error("移動に失敗しました")
 
 # =====================
 # ゴミ箱
@@ -162,10 +171,13 @@ if trash_files:
     )
 
     if st.button("♻ 復元する"):
-        shutil.move(
-            os.path.join(TRASH_DIR, trash_selected),
-            os.path.join(SAVE_DIR, trash_selected)
-        )
-        st.success("復元しました")
+        try:
+            shutil.move(
+                os.path.join(TRASH_DIR, trash_selected),
+                os.path.join(SAVE_DIR, trash_selected)
+            )
+            st.success("復元しました")
+        except Exception:
+            st.error("復元に失敗しました")
 else:
     st.caption("ゴミ箱は空です")
