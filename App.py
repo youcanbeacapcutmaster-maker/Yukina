@@ -59,7 +59,7 @@ if query:
             st.caption("タグ: " + ", ".join(item["tags"]))
             if st.button("開く", key=f"open_{item['file']}"):
                 st.session_state["selected"] = item["file"]
-                st.experimental_rerun()
+                st.rerun()
 
 # =====================
 # メモ選択
